@@ -9,13 +9,15 @@ public class Graph {
     double dist;
     Queue<Integer> q;
     LinkedList<Location> linkedList = new LinkedList<>();
-    ArrayList<Vehicle> vehicleList = new ArrayList<Vehicle>();
+    ArrayList<Vehicle> vehicleList = new ArrayList<>();
+    double routeCost;
+    double tourCost;
 
     public Graph(List<Location> c){
         this.c = c;
         d=(Depot)c.get(0);
         numOfVehicles = 0;
-        q = new LinkedList<Integer>();
+        q = new LinkedList<>();
         adjMatrix = new double[c.size()][c.size()]; //store distance between every 2 node (customer and depot),customer and customer
         //forming the graph
         for (int i = 0; i < c.size(); i++) { //drawing the edge
@@ -52,8 +54,7 @@ public class Graph {
     public void bfs() {
         double shortestPath;
         int currentLoad;
-        double routeCost;
-        double tourCost=0;
+        tourCost=0;
 
         q.add(1); //start from 1 , because Customer class start from index 1
         int v1=q.peek();
@@ -83,7 +84,7 @@ public class Graph {
                 int temp=0; //customer ID
                 for (int i = 1; i < c.size(); i++) { //create a temporary shortest path here (e.g. 1->2, we know later it will be replaced by 3)
                     Customer cus=(Customer) c.get(i);
-                    if (!cus.wasVisited && (currentLoad + cus.demandSize) <= d.demandSize) {  //d.demandSize= depot MaximumCapacity
+                    if (!cus.wasVisited && (currentLoad + cus.demandSize) <= d.maximumCapacity) {  //d.demandSize= depot MaximumCapacity
                         shortestPath = adjMatrix[v2][i];
                         temp = i;
                         break;
@@ -91,7 +92,7 @@ public class Graph {
                 }
                 for (int k = 1; k < c.size(); k++) { //find the shortest path
                     Customer cus=(Customer) c.get(k);
-                    if (!cus.wasVisited && (currentLoad + cus.demandSize) <= d.demandSize) {
+                    if (!cus.wasVisited && (currentLoad + cus.demandSize) <= d.maximumCapacity) {
                         if(shortestPath > adjMatrix[v2][k]){
                             shortestPath = adjMatrix[v2][k];
                             temp = k;
@@ -129,20 +130,14 @@ public class Graph {
     }
 
     public double computeRouteCost(LinkedList<Location> linkedList){
-        //if linked list start and end with zero, we just need the for loop to calculate all routeCost
-        //Eg: 0 -> 4 -> 1 -> 0
-        // routeCost+=adjMatrix[x][y];
         double routeCost=0;
-        //routeCost+=adjMatrix[0][linkedList.getFirst().id]; //starting from depot
 
         for (int i = 0; i < linkedList.size()-1; i++) {
             int x= linkedList.get(i).id;
             int y= linkedList.get(i+1).id;
-            routeCost+=adjMatrix[x][y];//travel until last destination
-
+            routeCost+=adjMatrix[x][y];
         }
-        //routeCost+=adjMatrix[linkedList.get(linkedList.size()-1).id][0];  // go back to depot
-        return routeCost;
+      return routeCost;
     }
 
     public void displayVehicle(ArrayList<Vehicle> vehicleList){
@@ -152,19 +147,62 @@ public class Graph {
         }
     }
 
-    //Jowen's working on...
     public void greedySearch(){
-        int i=0;
-        while(!completeVisited()){  //if true , greedyList has been generated, can terminate
-            double [] array=new double[adjMatrix.length]; //to compare their distance from i node
-            for (int j = 0; j < adjMatrix.length; j++) {
-                array[j]=adjMatrix[i][j];  //distance array from i
-            }
-            Arrays.sort(array); // to get ascending distance from i
+        int currentLoad;
+        tourCost=0;
+        ArrayList<Customer> greedyList=new ArrayList<>();
+        linkedList.clear();
+        vehicleList.clear();
 
-
+        for (int i = 1; i < c.size(); i++) { //resetting all to false to create connections later
+            ((Customer)(c.get(i))).wasVisited=false;
         }
 
+        int i=0;  //start from depot
+        while(!completeVisited()) {  //if true , greedyList has been generated, can terminate
+            //double [] array=new double[adjMatrix.length];//to compare their distance from i node
+            double shortest = Double.POSITIVE_INFINITY;
+            Customer tempCustomer = (Customer) c.get(1);
+            for (int j = 1; j < adjMatrix.length; j++) { //to get shortest distance
+                Customer cus = (Customer) c.get(j);
+                if (i == j)
+                    continue;
+                if(cus.wasVisited)
+                    continue;
+                if (adjMatrix[i][j] < shortest) { //greedy search only consider shortest distance between two node
+                    shortest = adjMatrix[i][j];
+                    tempCustomer = cus;
+                }
+
+            }
+            shortest=Double.POSITIVE_INFINITY;
+            greedyList.add(tempCustomer);
+            tempCustomer.wasVisited=true;
+
+            i = tempCustomer.id;
+        }
+
+        i=0;
+        while(i<greedyList.size()) {
+            linkedList.clear();
+            linkedList.add(c.get(0)); //add depot
+            currentLoad = 0;
+
+            while(i<greedyList.size()&& currentLoad+greedyList.get(i).getDemandSize()<=d.maximumCapacity){
+                linkedList.add(greedyList.get(i)); //add Customer
+                currentLoad+=greedyList.get(i).getDemandSize();
+                i++;
+            }
+            linkedList.add(c.get(0));//complete the path with return to depot
+            routeCost = computeRouteCost(linkedList);
+            vehicleList.add(new Vehicle(linkedList, routeCost,currentLoad));
+
+            tourCost+=routeCost;
+            linkedList.clear();
+        }
+        //display output
+        System.out.println("Greedy Simulation Tour" + "\nTour Cost: " + tourCost);
+        displayVehicle(vehicleList);
     }
 
     public void MCTSearch(){
