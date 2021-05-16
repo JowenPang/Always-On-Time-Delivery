@@ -1,17 +1,9 @@
-public class Customer {
-    int xCoordinate;
-    int yCoordinate;
-    int demandSize;
-    int id;
-    static int serial =1;
+public class Customer extends Location{
     boolean wasVisited;
 
     public Customer(int xCoordinate, int yCoordinate, int demandSize) {
-        this.xCoordinate = xCoordinate;
-        this.yCoordinate = yCoordinate;
-        this.demandSize = demandSize;
+        super(xCoordinate,yCoordinate,demandSize);
         wasVisited = false;
-        id = serial++; //auto increment the ID whenever an instance of customer is created
     }
 
     public int getId() {
@@ -25,5 +17,9 @@ public class Customer {
     @Override
     public String toString() {
         return "[ id: " + id+ " x-coordinate: " + xCoordinate + ", y-coordinate: " + yCoordinate +", demand size: " + demandSize + "]";
+    }
+
+    public int getDemandSize() {
+        return demandSize;
     }
 }
