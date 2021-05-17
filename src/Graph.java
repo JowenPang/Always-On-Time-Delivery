@@ -57,8 +57,8 @@ public class Graph {
         tourCost=0;
 
         q.add(1); //start from 1 , because Customer class start from index 1
-        int v1=q.peek();
-        int v2; // used to add to the queue when repeatedly call the getAdjUnvisitedVertex()
+        int v1=q.peek();//take the first customer
+        int v2; //check the nodes adjacent to it, since this is a complete undirected graph, the nodes adjacent to customer 1 is 2,3,4
         while((v2=getAdjUnvisitedVertex(v1))!=-1){ //Queue = {1,2,3,4}
             ((Customer)(c.get(v2))).wasVisited=true;
             q.add(v2);
