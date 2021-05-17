@@ -1,13 +1,10 @@
-public class Depot {
+public class Depot extends Location{
     int numOfCustomers;
-    int maxCapacity;
-    int xCoordinate;
-    int yCoordinate;
+    int maximumCapacity;
 
     public Depot(int numOfCustomers, int maxCapacity, int xCoordinate, int yCoordinate) {
+        super(xCoordinate, yCoordinate, maxCapacity);
         this.numOfCustomers = numOfCustomers;
-        this.maxCapacity = maxCapacity;
-        this.xCoordinate = xCoordinate;
-        this.yCoordinate = yCoordinate;
+        maximumCapacity=super.demandSize;
     }
 }
