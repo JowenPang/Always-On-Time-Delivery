@@ -51,6 +51,114 @@ public class Graph {
         return -1;
     }
 
+    public void bfs2(){
+        List<Integer> adjList[]= new LinkedList[c.size()-1];  //adjacency list as different route combination
+        double [] cost=new double[c.size()-1];      //cost of the adjList[i] route
+        int [] accumulatedSize=new int[c.size()-1];
+
+        boolean [][] visited = new boolean[c.size()-1][c.size()-1];
+        //store visited customer for every customer
+        //2D array because for each adjList, every customer must be visited
+
+        for (int i = 0; i < adjList.length; i++) {
+            adjList[i]=new LinkedList<>();
+            adjList[i].add(0);   //every route will start from depot
+        }
+
+        for (int i = 0; i < adjList.length; i++) { //bfs first level
+            adjList[i].add(i + 1);  //add every possible customer as first visit
+            cost[i] += adjMatrix[0][i + 1];  //depot to first customer
+            accumulatedSize[i]+=c.get(i+1).demandSize;
+            visited[i][i]=true;  //first node visited
+        }
+        while(!completeArrayVisited(visited)) {  //everytime start this line means a new level of bfs
+            int x;
+
+            for (int i = 0; i < adjList.length; i++) {
+                x=adjList[i].get(adjList[i].size()-1);  //get last element of list
+                int minNode=0;
+                double min=Double.POSITIVE_INFINITY;
+                for (int j = 1; j < adjMatrix.length; j++) {  //check distance to adjacent node of customer i
+                    if(visited[i][j-1])  //visited node in the list
+                        continue;
+                    if(adjMatrix[x][j]<min && accumulatedSize[i]+c.get(j).demandSize<= d.maximumCapacity ) {
+                        min = adjMatrix[x][j];  //update the route with cheapest cost
+                        minNode=j;
+                    }
+
+                }
+                if(minNode!=0 ) {  //there exists a customer demand size that still can be add to the vehicle
+                    cost[i] += min;
+                    adjList[i].add(minNode);
+                    accumulatedSize[i] += c.get(minNode).demandSize;
+                    visited[i][minNode-1]=true;
+                }
+                else{  //no customer demand size can fit in the vehicle anymore, need new vehicle
+                    accumulatedSize[i]=0;
+                    cost[i] += adjMatrix[adjList[i].get(adjList[i].size()-1)][0]; //go back to depot
+                    adjList[i].add(0);   //act as ending for previous route and also starting of next vehicle
+
+                }
+            }
+            if(completeArrayVisited(visited)) {  //every customer visited, now return to depot and terminate
+                for (int i = 0; i < adjList.length; i++) {
+                    cost[i] += adjMatrix[adjList[i].get(adjList[i].size() - 1)][0];
+                    adjList[i].add(0);
+                }
+                break;
+            }
+        }
+
+
+        //System.out.println(Arrays.toString(adjList));
+        //System.out.println(Arrays.toString(cost));
+        double minCost=Double.POSITIVE_INFINITY;
+        int minIndex=0;
+        for (int i = 0; i < adjList.length; i++) {
+            if(cost[i]<minCost){
+                minCost=cost[i];
+                minIndex=i;
+            }
+        }
+
+        //System.out.println("Path = " + adjList[minIndex].toString());
+        System.out.println("Basic Simulation Tour" + "\nTour Cost: " + minCost);
+        int index=1;
+            linkedList.clear();
+            int  currentLoad=0;
+            linkedList.add(c.get(0));
+            for (int i = index; i < adjList[minIndex].size(); i++) {  //separate the minCost path into different vehicle
+                if(adjList[minIndex].get(i) != 0) {
+                    linkedList.add(c.get(adjList[minIndex].get(i)));
+                    currentLoad+=c.get(adjList[minIndex].get(i)).demandSize;
+                    continue;
+                }
+                index=i;
+                linkedList.add(c.get(0));
+                routeCost = computeRouteCost(linkedList);
+                vehicleList.add(new Vehicle(linkedList, routeCost,currentLoad));
+                linkedList.clear();
+                currentLoad=0;
+                linkedList.add(c.get(0));
+            }
+
+
+        displayVehicle(vehicleList);
+
+
+    }
+
+    public boolean completeArrayVisited(boolean [] [] visited){
+        for (int i = 0; i < visited.length; i++){
+            for(int j = 0; j <visited[0].length; j++) {
+                if (!visited[i][j])
+                    return false; //still have unvisited node
+
+            }
+        }
+        return true;
+    }
+
     public void bfs() {
         double shortestPath;
         int currentLoad;
@@ -182,23 +290,45 @@ public class Graph {
             i = tempCustomer.id;
         }
 
-        i=0;
-        while(i<greedyList.size()) {
-            linkedList.clear();
-            linkedList.add(c.get(0)); //add depot
-            currentLoad = 0;
+        for ( i = 1; i < c.size(); i++) { //resetting all to false to create connections later
+            ((Customer)(c.get(i))).wasVisited=false;
+        }
 
-            while(i<greedyList.size()&& currentLoad+greedyList.get(i).getDemandSize()<=d.maximumCapacity){
-                linkedList.add(greedyList.get(i)); //add Customer
-                currentLoad+=greedyList.get(i).getDemandSize();
-                i++;
-            }
+        i=0;
+        while(!completeVisited()) {  //for loop to form different combination of customer , makesure all customer are visited
+            //suppose is while there are no node unvisited
+            linkedList.clear();
+            currentLoad = 0;
+            double tempShortestNode=adjMatrix[0][0];  //distance depot to depot = zero
+            int tempShortestNodeIndex=0;
+                while (i < greedyList.size()) {
+                    //traverse through greedy list to end to check if there if any combination can be formed, which capacity won't be overload
+                    if (currentLoad + greedyList.get(i).getDemandSize() <= d.maximumCapacity  && !((Customer)c.get(i+1)).wasVisited) {
+                        double shortestFirstNode = adjMatrix[0][greedyList.get(i).id];
+                        if (shortestFirstNode < tempShortestNode) {
+                            linkedList.add(tempShortestNodeIndex, greedyList.get(i));
+                        } else if (linkedList.size() >= 2) {
+                            linkedList.add(tempShortestNodeIndex + 1, greedyList.get(i));
+                        } else
+                            linkedList.add(greedyList.get(i)); //add Customer at the end , but we need to formed the route starting from location closest to the depot
+                        ((Customer)c.get(i+1)).wasVisited=true;
+                        tempShortestNode = shortestFirstNode;
+                        tempShortestNodeIndex = linkedList.indexOf(greedyList.get(i));
+                        currentLoad += greedyList.get(i).getDemandSize();
+                    }
+                    i++;
+                }
+
+
+
+            linkedList.addFirst(c.get(0)); //add depot
             linkedList.add(c.get(0));//complete the path with return to depot
             routeCost = computeRouteCost(linkedList);
             vehicleList.add(new Vehicle(linkedList, routeCost,currentLoad));
 
             tourCost+=routeCost;
             linkedList.clear();
+            i=0;
         }
         //display output
         System.out.println("Greedy Simulation Tour" + "\nTour Cost: " + tourCost);

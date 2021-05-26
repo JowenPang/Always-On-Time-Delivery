@@ -33,8 +33,9 @@ public class Main {
 
         Graph graph = new Graph(list);
         //graph.displayEdges();
-        graph.bfs();
+        graph.bfs2();
         System.out.println("\n\n--------------------------------------------------------\n\n");
+        //graph.bfs();
         graph.greedySearch();
 
     }

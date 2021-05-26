@@ -1,4 +1,6 @@
-public abstract class Location {
+
+
+public class Location{
     int xCoordinate;
     int yCoordinate;
     int demandSize;
