@@ -22,7 +22,7 @@ public class Vehicle {
             sb.append(list.get(i).id + " -> ");
         }
         sb.append(0);
-        return sb + "\nCapacity: " + capacity + "\nCost: " + cost;
+        return sb + "\nCapacity: " + capacity + "\nCost: " + cost + "\n";
     }
 
 }

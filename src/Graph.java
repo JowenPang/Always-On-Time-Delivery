@@ -51,7 +51,7 @@ public class Graph {
         return -1;
     }
 
-    public void bfs2(){
+    public ArrayList<Vehicle> bfs2(){
         List<Integer> adjList[]= new LinkedList[c.size()-1];  //adjacency list as different route combination
         double [] cost=new double[c.size()-1];      //cost of the adjList[i] route
         int [] accumulatedSize=new int[c.size()-1];
@@ -102,8 +102,10 @@ public class Graph {
             }
             if(completeArrayVisited(visited)) {  //every customer visited, now return to depot and terminate
                 for (int i = 0; i < adjList.length; i++) {
-                    cost[i] += adjMatrix[adjList[i].get(adjList[i].size() - 1)][0];
-                    adjList[i].add(0);
+                    if(adjList[i].get(adjList[i].size() - 1)!=0) {
+                        cost[i] += adjMatrix[adjList[i].get(adjList[i].size() - 1)][0];
+                        adjList[i].add(0);
+                    }
                 }
                 break;
             }
@@ -143,7 +145,7 @@ public class Graph {
             }
 
 
-        displayVehicle(vehicleList);
+        return vehicleList;
 
 
     }
@@ -230,7 +232,7 @@ public class Graph {
         displayVehicle(vehicleList);
     }
 
-    public boolean completeVisited(){
+    public boolean completeVisited(){  //only checking is customer is visited , depot is excluded
         for (int i = 1; i < c.size(); i++) {
             if(!((Customer)c.get(i)).wasVisited) return false;
         }
@@ -255,12 +257,10 @@ public class Graph {
         }
     }
 
-    public void greedySearch(){
+    public ArrayList<Vehicle> greedySearch(){
         int currentLoad;
         tourCost=0;
-        ArrayList<Customer> greedyList=new ArrayList<>();
-        linkedList.clear();
-        vehicleList.clear();
+        ArrayList<Location> greedyList=new ArrayList<>();
 
         for (int i = 1; i < c.size(); i++) { //resetting all to false to create connections later
             ((Customer)(c.get(i))).wasVisited=false;
@@ -293,31 +293,149 @@ public class Graph {
         for ( i = 1; i < c.size(); i++) { //resetting all to false to create connections later
             ((Customer)(c.get(i))).wasVisited=false;
         }
+        /*for ( i = 0; i < greedyList.size(); i++) {
+            System.out.print(greedyList.get(i).id+" ");
+        }*/
+        tourCost=vehicleDistribution(greedyList);
+        //display output
+        System.out.println("Greedy Simulation Tour" + "\nTour Cost: " + tourCost);
+        return vehicleList;
+    }
 
-        i=0;
+    public ArrayList<Vehicle>  bestFirstSearch() {
+        tourCost = 0;
+        ArrayList<Integer> closed = new ArrayList<>();  //a list storing visited by not yet expand node
+        ArrayList<Location> open = new ArrayList<>();   //a list storing visited and expanded node
+        List<Double> distanceFromDepot= new ArrayList<>();  //a list storing straight line distance
+        closed.add(0);
+        for (int i = 1; i < adjMatrix[0].length; i++) {
+            distanceFromDepot.add(adjMatrix[0][i]);
+        }
+        Collections.sort(distanceFromDepot);
+
+        for (int i = 0; i < distanceFromDepot.size(); i++) {  //list that store location according to h(n)-> distance to goal node
+            for (int j = 1; j < adjMatrix[0].length; j++) {
+                if(adjMatrix[0][j]== distanceFromDepot.get(i)) {
+                    closed.add(j);
+                    break;
+                }
+            }
+        }
+        open.add(c.get(closed.get(0))); //start exploring with first node in open
+        closed.remove(0);
+
+        //f(n)=h(n)+g(n)
+        while(!closed.isEmpty()){ //must travel until closed list is all visited
+            List<Double> heuristicFunction=new ArrayList<>(); //first copy the distance to goal(depot)
+            Location current=open.get(open.size()-1);
+            int currentID=current.id;
+            double min=Double.POSITIVE_INFINITY;
+            int minIndex=0;
+            for (int i = 0; i < distanceFromDepot.size(); i++) {
+                double g= adjMatrix[currentID][closed.get(i)]+distanceFromDepot.get(i);   //distance from current node to next node
+                heuristicFunction.add(g); //set the heuristic function
+            }
+            for (int i = 0; i < heuristicFunction.size(); i++) {
+                if(heuristicFunction.get(i)<min){
+                    min=heuristicFunction.get(i);
+                    minIndex=i;
+                }
+            }
+            open.add(c.get(closed.get(minIndex)));
+            closed.remove(minIndex);
+            distanceFromDepot.remove(minIndex);
+        }
+        open.remove(0);
+       /* for (int i = 0; i < open.size(); i++) {
+            System.out.print(open.get(i).id+" ");
+        }
+*/
+
+        tourCost=vehicleDistribution(open);
+        //display output
+        System.out.println("Best First Search Simulation Tour" + "\nTour Cost: " + tourCost);
+        return vehicleList;
+    }
+
+    public ArrayList<Vehicle>  AStarSearch() {
+        tourCost = 0;
+        ArrayList<Location> closed = new ArrayList<>();  //a list storing visited by not yet expand node
+        ArrayList<Location> open = new ArrayList<>();   //a list storing visited and expanded node
+        List<Double> g= new ArrayList<>();  //a list storing straight line distance, h(n)
+        for (int i = 0; i < adjMatrix[0].length; i++) {
+            g.add(adjMatrix[0][i]);
+        }
+        for (int i = 0; i < g.size(); i++) {  //list that store location according to h(n)-> distance to goal node
+            closed.add(c.get(i));
+        }
+
+        open.add(closed.remove(0)); //start exploring with first node in open
+        double startToCurrent=0;
+        //f(n)=h(n)+g(n)
+        while(!closed.isEmpty()){ //must travel until closed list is all visited
+            List<Double> f=new ArrayList<>(); //first copy the distance to goal(depot)
+            Location current=open.get(open.size()-1); //expand the node chosen
+            int currentID=current.id;
+            double min=Double.POSITIVE_INFINITY;
+            int minIndex=0;
+            for (int i = 1; i <=closed.size(); i++) {
+                double h= startToCurrent+ adjMatrix[currentID][closed.get(i-1).id]+ g.get(i);   //distance from current node to next node
+                f.add(h); //set the heuristic function
+            }
+            for (int i = 0; i < f.size(); i++) {
+                if(f.get(i)<min){
+                    min=f.get(i);
+                    minIndex=i;
+                }
+            }
+            startToCurrent+=adjMatrix[currentID][closed.get(minIndex).id];
+            open.add(closed.remove(minIndex));//the node is being visited and expanded, remove from closed
+            g.remove(minIndex);
+        }
+        open.remove(0);
+        /*for (int i = 0; i < open.size(); i++) {
+            System.out.print(open.get(i).id+" ");
+        }*/
+
+
+        tourCost=vehicleDistribution(open);
+        //display output
+        System.out.println("A Star Search Simulation Tour" + "\nTour Cost: " + tourCost);
+        return vehicleList;
+    }
+
+    public double vehicleDistribution(ArrayList<Location> list){
+        tourCost=0;
+        linkedList.clear();
+        vehicleList.clear();
+
+        for (int i = 1; i < c.size(); i++) { //resetting all to false to create connections later
+            ((Customer)(c.get(i))).wasVisited=false;
+        }
+        int i=0;
         while(!completeVisited()) {  //for loop to form different combination of customer , makesure all customer are visited
             //suppose is while there are no node unvisited
             linkedList.clear();
-            currentLoad = 0;
+            int currentLoad = 0;
             double tempShortestNode=adjMatrix[0][0];  //distance depot to depot = zero
             int tempShortestNodeIndex=0;
-                while (i < greedyList.size()) {
-                    //traverse through greedy list to end to check if there if any combination can be formed, which capacity won't be overload
-                    if (currentLoad + greedyList.get(i).getDemandSize() <= d.maximumCapacity  && !((Customer)c.get(i+1)).wasVisited) {
-                        double shortestFirstNode = adjMatrix[0][greedyList.get(i).id];
-                        if (shortestFirstNode < tempShortestNode) {
-                            linkedList.add(tempShortestNodeIndex, greedyList.get(i));
-                        } else if (linkedList.size() >= 2) {
-                            linkedList.add(tempShortestNodeIndex + 1, greedyList.get(i));
-                        } else
-                            linkedList.add(greedyList.get(i)); //add Customer at the end , but we need to formed the route starting from location closest to the depot
-                        ((Customer)c.get(i+1)).wasVisited=true;
-                        tempShortestNode = shortestFirstNode;
-                        tempShortestNodeIndex = linkedList.indexOf(greedyList.get(i));
-                        currentLoad += greedyList.get(i).getDemandSize();
-                    }
-                    i++;
+            while (i < list.size()) {
+                //traverse through greedy list to end to check if there if any combination can be formed, which capacity won't be overload
+                if (currentLoad + list.get(i).demandSize<= d.maximumCapacity  && !((Customer)c.get(i+1)).wasVisited) {
+                    double shortestFirstNode = adjMatrix[0][list.get(i).id];
+                    if (shortestFirstNode < tempShortestNode) {
+                        linkedList.add(tempShortestNodeIndex, list.get(i));
+                    } else if (linkedList.size() >= 2) {
+                        linkedList.add(tempShortestNodeIndex + 1, list.get(i));
+                    } else
+                        linkedList.add(list.get(i)); //add Customer at the end , but we need to formed the route starting from location closest to the depot
+                    ((Customer)c.get(i+1)).wasVisited=true;
+                    tempShortestNode = shortestFirstNode;
+                    tempShortestNodeIndex = linkedList.indexOf(list.get(i));
+                    currentLoad += list.get(i).demandSize;
                 }
+                i++;
+            }
 
 
 
@@ -330,9 +448,7 @@ public class Graph {
             linkedList.clear();
             i=0;
         }
-        //display output
-        System.out.println("Greedy Simulation Tour" + "\nTour Cost: " + tourCost);
-        displayVehicle(vehicleList);
+        return tourCost;
     }
 
     public void MCTSearch(){

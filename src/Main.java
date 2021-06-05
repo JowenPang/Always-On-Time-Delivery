@@ -33,10 +33,15 @@ public class Main {
 
         Graph graph = new Graph(list);
         //graph.displayEdges();
-        graph.bfs2();
-        System.out.println("\n\n--------------------------------------------------------\n\n");
+
+        System.out.println(graph.bfs2());
         //graph.bfs();
-        graph.greedySearch();
+        System.out.println("\n\n--------------------------------------------------------\n\n");
+        System.out.println(graph.greedySearch());
+        System.out.println("\n\n--------------------------------------------------------\n\n");
+        //System.out.println(graph.bestFirstSearch());
+        System.out.println("\n\n--------------------------------------------------------\n\n");
+        System.out.println(graph.AStarSearch());
 
     }
 }
