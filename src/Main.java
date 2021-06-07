@@ -32,7 +32,7 @@ public class Main {
         }
 
         Graph graph = new Graph(list);
-        //graph.displayEdges();
+        graph.displayEdges();
 
         System.out.println(graph.bfs2());
         //graph.bfs();
@@ -41,7 +41,7 @@ public class Main {
         System.out.println("\n\n--------------------------------------------------------\n\n");
         System.out.println(graph.bestFirstSearch());
         System.out.println("\n\n--------------------------------------------------------\n\n");
-        System.out.println(graph.AStarSearch());
+        //System.out.println(graph.AStarSearch());
 
     }
 }
