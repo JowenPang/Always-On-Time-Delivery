@@ -482,12 +482,12 @@ public class Graph {
 
         result.add(open.remove(0)); //add depot to start
         h.remove(0);
+        Location currentStop = result.get(result.size() - 1);
 
         int maxCapacity = d.maximumCapacity;
         int currentRouteCapacity = 0;
 
         while (!open.isEmpty()) {
-            Location currentStop = result.get(result.size() - 1);
             double fMIN = Double.POSITIVE_INFINITY;
 
             int openID = -1; //-1 means nextStop not found
@@ -508,9 +508,11 @@ public class Graph {
                 currentRouteCapacity += open.get(openID).demandSize;
                 result.add(open.remove(openID));
                 h.remove(openID);
+                currentStop = result.get(result.size() - 1);
                 g = gTemp; //update g(n) until nextStop
             }
             else { //new route, reset data of route
+                currentStop = result.get(0); //set new start as depot, but not included in (ArrayList) result
                 currentRouteCapacity = 0;
                 f = 0;
                 g = 0;
