@@ -505,14 +505,14 @@ public class Graph {
                 }
             }
             if (openID != -1) {
-                currentRouteCapacity += open.get(openID).demandSize;
                 result.add(open.remove(openID));
                 h.remove(openID);
-                currentStop = result.get(result.size() - 1);
+                currentStop = result.get(result.size() - 1); //refresh currentStop
+                currentRouteCapacity += result.get(result.size() - 1).demandSize;
                 g = gTemp; //update g(n) until nextStop
             }
             else { //new route, reset data of route
-                currentStop = result.get(0); //set new start as depot, but not included in (ArrayList) result
+                currentStop = result.get(0); //restart currentStop at depot, but not added into (ArrayList) result
                 currentRouteCapacity = 0;
                 f = 0;
                 g = 0;
