@@ -303,53 +303,107 @@ public class Graph {
     }
 
     public ArrayList<Vehicle>  bestFirstSearch() {
+//        tourCost = 0;
+//        ArrayList<Integer> closed = new ArrayList<>();  //a list storing visited by not yet expand node
+//        ArrayList<Location> open = new ArrayList<>();   //a list storing visited and expanded node
+//        List<Double> distanceFromDepot= new ArrayList<>();  //a list storing straight line distance
+//        closed.add(0);
+//        for (int i = 1; i < adjMatrix[0].length; i++) {
+//            distanceFromDepot.add(adjMatrix[0][i]);
+//        }
+//        Collections.sort(distanceFromDepot);
+//
+//        for (int i = 0; i < distanceFromDepot.size(); i++) {  //list that store location according to h(n)-> distance to goal node
+//            for (int j = 1; j < adjMatrix[0].length; j++) {
+//                if(adjMatrix[0][j]== distanceFromDepot.get(i)) {
+//                    closed.add(j);
+//                    break;
+//                }
+//            }
+//        }
+//        open.add(c.get(closed.get(0))); //start exploring with first node in open
+//        closed.remove(0);
+//
+//        //f(n)=h(n)+g(n)
+//        while(!closed.isEmpty()){ //must travel until closed list is all visited
+//            List<Double> heuristicFunction=new ArrayList<>(); //first copy the distance to goal(depot)
+//            Location current=open.get(open.size()-1);
+//            int currentID=current.id;
+//            double min=Double.POSITIVE_INFINITY;
+//            int minIndex=0;
+//            for (int i = 0; i < distanceFromDepot.size(); i++) {
+//                double g= adjMatrix[currentID][closed.get(i)]+distanceFromDepot.get(i);   //distance from current node to next node
+//                heuristicFunction.add(g); //set the heuristic function
+//            }
+//            for (int i = 0; i < heuristicFunction.size(); i++) {
+//                if(heuristicFunction.get(i)<min){
+//                    min=heuristicFunction.get(i);
+//                    minIndex=i;
+//                }
+//            }
+//            open.add(c.get(closed.get(minIndex)));
+//            closed.remove(minIndex);
+//            distanceFromDepot.remove(minIndex);
+//        }
+//        open.remove(0);
+//       /* for (int i = 0; i < open.size(); i++) {
+//            System.out.print(open.get(i).id+" ");
+//        }*/
+//
+//        tourCost=vehicleDistribution(open);
+//        //display output
+//        System.out.println("Best First Search Simulation Tour" + "\nTour Cost: " + tourCost);
+//        return vehicleList;
+
+        //jowen
+        //-----
+        //boon
+        /*
+        from what i understand,
+        if your code is sth like this:
+            expected output:
+                0 -> 1 -> 4 -> 0
+                0 -> 2 -> 3 -> 0
+            AND this method send this [1, 4, 2, 3] into vehicleDistribution method
+        then my code correct liao lo, yayy
+        */
+
         tourCost = 0;
-        ArrayList<Integer> closed = new ArrayList<>();  //a list storing visited by not yet expand node
-        ArrayList<Location> open = new ArrayList<>();   //a list storing visited and expanded node
-        List<Double> distanceFromDepot= new ArrayList<>();  //a list storing straight line distance
-        closed.add(0);
-        for (int i = 1; i < adjMatrix[0].length; i++) {
-            distanceFromDepot.add(adjMatrix[0][i]);
+        ArrayList<Location> closed = new ArrayList<>(); //a list storing visited by not yet expand node
+        ArrayList<Location> open = new ArrayList<>(); //a list storing visited and expanded node
+        List<Double> h = new ArrayList<>(); //a list storing straight line distance from current node to goal node, h(n)
+        for (int i = 0; i < adjMatrix[0].length; i++) {
+            h.add(adjMatrix[0][i]);
         }
-        Collections.sort(distanceFromDepot);
+        for (int i = 0; i < h.size(); i++) {  //list that store location, according to h(n)
+            closed.add(c.get(i));
+        }
 
-        for (int i = 0; i < distanceFromDepot.size(); i++) {  //list that store location according to h(n)-> distance to goal node
-            for (int j = 1; j < adjMatrix[0].length; j++) {
-                if(adjMatrix[0][j]== distanceFromDepot.get(i)) {
-                    closed.add(j);
-                    break;
+        open.add(closed.remove(0)); //start exploring with first node in open
+        h.remove(0);
+        //f(n) = h(n)
+        int currentRouteCapacity = 0;
+        while (!closed.isEmpty()) {
+            double hMIN = Double.POSITIVE_INFINITY;
+            int closedID = -1; //-1 means nextStop not found
+            for (int i = 0; i < closed.size(); i++) { //to find best possible nextStop
+                //condition 1: lowest h(n) among latest list of closed
+                //condition 2: if add this nextStop does not exceed maximumCapacity
+                if (h.get(i) < hMIN && currentRouteCapacity + closed.get(i).demandSize <= d.maximumCapacity) {
+                    hMIN = h.get(i);
+                    closedID = i;
                 }
             }
-        }
-        open.add(c.get(closed.get(0))); //start exploring with first node in open
-        closed.remove(0);
-
-        //f(n)=h(n)+g(n)
-        while(!closed.isEmpty()){ //must travel until closed list is all visited
-            List<Double> heuristicFunction=new ArrayList<>(); //first copy the distance to goal(depot)
-            Location current=open.get(open.size()-1);
-            int currentID=current.id;
-            double min=Double.POSITIVE_INFINITY;
-            int minIndex=0;
-            for (int i = 0; i < distanceFromDepot.size(); i++) {
-                double g= adjMatrix[currentID][closed.get(i)]+distanceFromDepot.get(i);   //distance from current node to next node
-                heuristicFunction.add(g); //set the heuristic function
+            if (closedID != -1) {
+                currentRouteCapacity += closed.get(closedID).demandSize;
+                open.add(closed.remove(closedID));
+                h.remove(closedID);
             }
-            for (int i = 0; i < heuristicFunction.size(); i++) {
-                if(heuristicFunction.get(i)<min){
-                    min=heuristicFunction.get(i);
-                    minIndex=i;
-                }
+            else {
+                currentRouteCapacity = 0;
             }
-            open.add(c.get(closed.get(minIndex)));
-            closed.remove(minIndex);
-            distanceFromDepot.remove(minIndex);
         }
         open.remove(0);
-       /* for (int i = 0; i < open.size(); i++) {
-            System.out.print(open.get(i).id+" ");
-        }
-*/
 
         tourCost=vehicleDistribution(open);
         //display output
@@ -397,7 +451,6 @@ public class Graph {
             System.out.print(open.get(i).id+" ");
         }*/
 
-
         tourCost=vehicleDistribution(open);
         //display output
         System.out.println("A Star Search Simulation Tour" + "\nTour Cost: " + tourCost);
@@ -436,8 +489,6 @@ public class Graph {
                 }
                 i++;
             }
-
-
 
             linkedList.addFirst(c.get(0)); //add depot
             linkedList.add(c.get(0));//complete the path with return to depot

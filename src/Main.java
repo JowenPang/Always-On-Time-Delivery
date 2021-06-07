@@ -39,7 +39,7 @@ public class Main {
         System.out.println("\n\n--------------------------------------------------------\n\n");
         System.out.println(graph.greedySearch());
         System.out.println("\n\n--------------------------------------------------------\n\n");
-        //System.out.println(graph.bestFirstSearch());
+        System.out.println(graph.bestFirstSearch());
         System.out.println("\n\n--------------------------------------------------------\n\n");
         System.out.println(graph.AStarSearch());
 
