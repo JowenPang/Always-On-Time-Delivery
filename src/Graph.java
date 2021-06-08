@@ -1,3 +1,5 @@
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 public class Graph {
@@ -112,7 +114,7 @@ public class Graph {
         }
 
 
-        //System.out.println(Arrays.toString(adjList));
+        System.out.println(Arrays.toString(adjList));
         //System.out.println(Arrays.toString(cost));
         double minCost=Double.POSITIVE_INFINITY;
         int minIndex=0;
@@ -123,7 +125,7 @@ public class Graph {
             }
         }
 
-        //System.out.println("Path = " + adjList[minIndex].toString());
+        System.out.println("Path = " + adjList[minIndex].toString());
         System.out.println("Basic Simulation Tour" + "\nTour Cost: " + minCost);
         int index=1;
             linkedList.clear();
@@ -159,6 +161,101 @@ public class Graph {
             }
         }
         return true;
+    }
+
+    static  ArrayList<Integer> bestPath=new ArrayList<>();
+    static double bestCost=Double.POSITIVE_INFINITY;
+
+    public ArrayList<Vehicle> dfs(){
+        Instant startTime=Instant.now();
+        ArrayList<Integer> tempPath=new ArrayList<>();
+        ArrayList<Integer> adjList [] =new ArrayList[c.size()];
+        for (int i = 0; i < c.size(); ++i) {
+            adjList[i]=new ArrayList<>();
+        }
+        for (int i = 0; i < adjList.length; ++i) {  //form adjacency list
+            for (int j = 1; j <c.size(); j++) {
+                if(j!=i)
+                    adjList[i].add(j);
+            }
+        }
+
+        bestPath=depthFirstSearch(0,adjList,tempPath,startTime);
+
+        System.out.println("Basic Simulation Tour" + "\nTour Cost: " + bestCost);
+        linkedList.clear();
+        int  currentLoad=0;
+        linkedList.add(c.get(0));
+        double capacity=d.maximumCapacity;
+        int index=1;
+        for (int i = index; i < bestPath.size(); i++) {  //separate the minCost path into different vehicle
+            if(currentLoad+c.get(bestPath.get(i)).demandSize<=d.maximumCapacity) {
+                linkedList.add(c.get(bestPath.get(i)));
+                currentLoad+=c.get(bestPath.get(i)).demandSize;
+                continue;
+            }
+            linkedList.add(c.get(0));
+            routeCost = computeRouteCost(linkedList);
+            vehicleList.add(new Vehicle(linkedList, routeCost,currentLoad));
+            linkedList.clear();
+            currentLoad=0;
+            linkedList.add(c.get(0));
+            i--;
+        }
+        return vehicleList;
+    }
+
+    public ArrayList<Integer> depthFirstSearch(Integer node,ArrayList<Integer> adjList[] ,ArrayList<Integer> tempPath,Instant startTime){
+
+
+        tempPath.add(node);
+        if(node!=0)
+            ((Customer)c.get(node)).wasVisited=true;
+        if(completeVisited()){ //form a path consist of every customer, compare if it is a cheaper path
+            double tempCost=0;
+            int currentNode=0;
+            int nextNode=0;
+            int remainingCapacity=d.maximumCapacity;
+            for (int i = 0; i < tempPath.size()-1; i++) {
+                currentNode=tempPath.get(i);
+                nextNode=tempPath.get(i+1);
+                if(remainingCapacity-c.get(nextNode).demandSize>0) {
+                    tempCost += adjMatrix[currentNode][nextNode];
+                }
+                else {
+                    tempCost += adjMatrix[currentNode][0];
+                    tempCost += adjMatrix[0][nextNode];
+                    remainingCapacity=d.maximumCapacity;
+
+                }
+                remainingCapacity-=c.get(nextNode).demandSize;
+            }
+            tempCost+= adjMatrix[nextNode][0];//back to depot
+            if(tempCost<=bestCost){
+                bestPath.clear();
+                for (int i = 0; i < tempPath.size(); i++) {
+                    bestPath.add(tempPath.get(i));
+                }
+                bestCost=tempCost;
+            }
+            ((Customer)c.get(node)).wasVisited=false;
+            return tempPath;
+        }
+
+
+        for (int i = 0; i < adjList[node].size(); i++) {
+            int nextNode=adjList[node].get(i);
+
+            if(!((Customer)c.get(nextNode)).wasVisited) {
+                depthFirstSearch(nextNode, adjList,tempPath,startTime);
+                tempPath.remove(tempPath.size()-1);
+            }
+        }
+        if(node!=0)
+            ((Customer)c.get(node)).wasVisited=false;
+        if(Duration.between(startTime,Instant.now()).getSeconds()>60)
+            return bestPath;
+        return bestPath;
     }
 
     public void bfs() {
@@ -239,6 +336,7 @@ public class Graph {
         return true;
     }
 
+
     public double computeRouteCost(LinkedList<Location> linkedList){
         double routeCost=0;
 
@@ -306,16 +404,16 @@ public class Graph {
         tourCost = 0;
         ArrayList<Integer> closed = new ArrayList<>();  //a list storing visited by not yet expand node
         ArrayList<Location> open = new ArrayList<>();   //a list storing visited and expanded node
-        List<Double> distanceFromDepot= new ArrayList<>();  //a list storing straight line distance
+        List<Double> distanceFromDepot = new ArrayList<>();  //a list storing straight line distance
         closed.add(0);
         for (int i = 1; i < adjMatrix[0].length; i++) {
             distanceFromDepot.add(adjMatrix[0][i]);
         }
-       Collections.sort(distanceFromDepot);
+        Collections.sort(distanceFromDepot);
 
         for (int i = 0; i < distanceFromDepot.size(); i++) {  //list that store location according to h(n)-> distance to goal node
             for (int j = 1; j < adjMatrix[0].length; j++) {
-                if(adjMatrix[0][j]== distanceFromDepot.get(i)) {
+                if (adjMatrix[0][j] == distanceFromDepot.get(i)) {
                     closed.add(j);
                     break;
                 }
@@ -325,21 +423,21 @@ public class Graph {
         closed.remove(0);
 
         //f(n)=h(n)+g(n)
-       while(!closed.isEmpty()){ //must travel until closed list is all visited
-            List<Double> heuristicFunction=new ArrayList<>(); //first copy the distance to goal(depot)
-            Location current=open.get(open.size()-1);
-            int currentID=current.id;
-            double min=Double.POSITIVE_INFINITY;
-            int minIndex=0;
+        while (!closed.isEmpty()) { //must travel until closed list is all visited
+            List<Double> heuristicFunction = new ArrayList<>(); //first copy the distance to goal(depot)
+            Location current = open.get(open.size() - 1);
+            int currentID = current.id;
+            double min = Double.POSITIVE_INFINITY;
+            int minIndex = 0;
             for (int i = 0; i < distanceFromDepot.size(); i++) {
-                double g= adjMatrix[currentID][closed.get(i)]+distanceFromDepot.get(i);   //distance from current node to next node
+                double g = adjMatrix[currentID][closed.get(i)] + distanceFromDepot.get(i);   //distance from current node to next node
                 heuristicFunction.add(g); //set the heuristic function
             }
             for (int i = 0; i < heuristicFunction.size(); i++) {
-                if(heuristicFunction.get(i)<min){
-                    min=heuristicFunction.get(i);
-                    minIndex=i;
-               }
+                if (heuristicFunction.get(i) < min) {
+                    min = heuristicFunction.get(i);
+                    minIndex = i;
+                }
             }
             open.add(c.get(closed.get(minIndex)));
             closed.remove(minIndex);
@@ -350,11 +448,11 @@ public class Graph {
             System.out.print(open.get(i).id+" ");
         }*/
 
-        tourCost=vehicleDistribution(open);
+        tourCost = vehicleDistribution(open);
         //display output
         System.out.println("Best First Search Simulation Tour" + "\nTour Cost: " + tourCost);
         return vehicleList;
-
+    }
         //jowen
         //-----
         //boon
@@ -367,8 +465,8 @@ public class Graph {
             AND this method send this [1, 4, 2, 3] into vehicleDistribution method
         then my code correct liao lo, yayy
         */
-
-        /*tourCost = 0;
+        public ArrayList<Vehicle>  bestFirstSearch2() {
+        tourCost = 0;
         ArrayList<Location> closed = new ArrayList<>(); //a list storing visited by not yet expand node
         ArrayList<Location> open = new ArrayList<>(); //a list storing visited and expanded node
         List<Double> h = new ArrayList<>(); //a list storing straight line distance from current node to goal node, h(n)
@@ -408,7 +506,7 @@ public class Graph {
         tourCost=vehicleDistribution(open);
         //display output
         System.out.println("Best First Search Simulation Tour" + "\nTour Cost: " + tourCost);
-        return vehicleList;*/
+        return vehicleList;
     }
 
     public ArrayList<Vehicle>  AStarSearch() {
