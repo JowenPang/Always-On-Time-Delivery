@@ -165,9 +165,9 @@ public class Graph {
 
     static  ArrayList<Integer> bestPath=new ArrayList<>();
     static double bestCost=Double.POSITIVE_INFINITY;
-
+    Instant startTime;
     public ArrayList<Vehicle> dfs(){
-        Instant startTime=Instant.now();
+        startTime=Instant.now();
         ArrayList<Integer> tempPath=new ArrayList<>();
         ArrayList<Integer> adjList [] =new ArrayList[c.size()];
         for (int i = 0; i < c.size(); ++i) {
@@ -175,12 +175,13 @@ public class Graph {
         }
         for (int i = 0; i < adjList.length; ++i) {  //form adjacency list
             for (int j = 1; j <c.size(); j++) {
+                //for every adjList[] , they have their own list storing their neighbor excluding itself
                 if(j!=i)
                     adjList[i].add(j);
             }
         }
 
-        bestPath=depthFirstSearch(0,adjList,tempPath,startTime);
+        bestPath=depthFirstSearch(0,adjList,tempPath);
 
         System.out.println("Basic Simulation Tour" + "\nTour Cost: " + bestCost);
         linkedList.clear();
@@ -188,10 +189,11 @@ public class Graph {
         linkedList.add(c.get(0));
         double capacity=d.maximumCapacity;
         int index=1;
-        for (int i = index; i < bestPath.size(); i++) {  //separate the minCost path into different vehicle
+        for (int i = index; i <bestPath.size(); i++) {  //separate the minCost path into different vehicle
             if(currentLoad+c.get(bestPath.get(i)).demandSize<=d.maximumCapacity) {
                 linkedList.add(c.get(bestPath.get(i)));
                 currentLoad+=c.get(bestPath.get(i)).demandSize;
+
                 continue;
             }
             linkedList.add(c.get(0));
@@ -202,15 +204,21 @@ public class Graph {
             linkedList.add(c.get(0));
             i--;
         }
+        linkedList.add(c.get(0));
+        routeCost = computeRouteCost(linkedList);
+        vehicleList.add(new Vehicle(linkedList, routeCost,currentLoad));
+
         return vehicleList;
     }
 
-    public ArrayList<Integer> depthFirstSearch(Integer node,ArrayList<Integer> adjList[] ,ArrayList<Integer> tempPath,Instant startTime){
-
+    public ArrayList<Integer> depthFirstSearch(Integer node,ArrayList<Integer> adjList[] ,ArrayList<Integer> tempPath){
 
         tempPath.add(node);
         if(node!=0)
             ((Customer)c.get(node)).wasVisited=true;
+
+
+        //base case + calculate pathCost
         if(completeVisited()){ //form a path consist of every customer, compare if it is a cheaper path
             double tempCost=0;
             int currentNode=0;
@@ -239,6 +247,8 @@ public class Graph {
                 bestCost=tempCost;
             }
             ((Customer)c.get(node)).wasVisited=false;
+
+
             return tempPath;
         }
 
@@ -247,14 +257,18 @@ public class Graph {
             int nextNode=adjList[node].get(i);
 
             if(!((Customer)c.get(nextNode)).wasVisited) {
-                depthFirstSearch(nextNode, adjList,tempPath,startTime);
+                depthFirstSearch(nextNode, adjList,tempPath);
+
+                if(Duration.between(startTime,Instant.now()).getSeconds()>60)
+                    return bestPath;
+
                 tempPath.remove(tempPath.size()-1);
+
             }
         }
         if(node!=0)
             ((Customer)c.get(node)).wasVisited=false;
-        if(Duration.between(startTime,Instant.now()).getSeconds()>60)
-            return bestPath;
+
         return bestPath;
     }
 
